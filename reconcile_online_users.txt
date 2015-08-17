@@ -4,7 +4,7 @@ use Data::Dumper;
 use List::Util 'max';
 use Redis;
 
-my $url = "http://mdpop75.italkip.com:50041/http_rpc/ul/ul.dump?arg=1";
+my $url = "http://md75.itap.com:5060/http_rpc/ul/ul.dump?arg=1";
 my $html = HTML::TagParser->new( $url);
 my $redis = Redis->new(server => '127.0.0.1:6379');
 $redis->select(1);
