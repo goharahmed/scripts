@@ -1,19 +1,19 @@
 #!/bin/perl
 use HTML::TagParser;
 use Data::Dumper;
-use List::Util 'max';
 use Redis;
-
+#Kamailio xHTTP URL with UserLocation query
 my $url = "http://md75.itap.com:5060/http_rpc/ul/ul.dump?arg=1";
 my $html = HTML::TagParser->new( $url);
+
+#Connect with Redis where Users are pushed directly via kamailio.cfg
 my $redis = Redis->new(server => '127.0.0.1:6379');
 $redis->select(1);
+
 my @elem = $html->getElementsByTagName( "pre" );
-$d = 0;
 my @array;
 foreach my $elm ( @elem ) {
         my %text = %{$elm->subTree()};
-        $x =  $text[1][0][3];
         $vals = Dumper(\%text);
          @array = split(',', $vals, length($vals));
 }
