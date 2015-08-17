@@ -30,6 +30,8 @@ User 101 got its Network cable unplugged. Now Redis should show 100, and 102 onl
 
 To resolve this I had to query kamailio for online users, match and fix the discrepencies between the Redis and Kamailio.
 Since Im not so good with pua_mi.so module and any other fancy techniques, I resolved this by taking help from the xhttp_rpc module.
-xhhtp_rpc.sp module enabled me to query my Kamailio for online users "kamctl ul show" via the http/curl to fetch all the AoRs. I managed to create the script which would parse the output from xHTTP_RPC and do some reconciliation with the Lists in Redis.
+xhhtp_rpc.sp module enabled me to query my Kamailio for online users "kamctl ul show" via the http/curl to fetch all the AoRs. I managed to create the script "Kamailio_xhhtp_userlocation.pl" which would parse the output from xHTTP_RPC and do some reconciliation with the Lists in Redis.
+
+Plan is to add this perl script "Kamailio_xhhtp_userlocation.pl" in crontab and invoke every after 10 minutes or more to clear out the Redis.
 
   
