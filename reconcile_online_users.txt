@@ -1,0 +1,76 @@
+#!/bin/perl
+use HTML::TagParser;
+use Data::Dumper;
+use List::Util 'max';
+use Redis;
+
+my $url = "http://mdpop75.italkip.com:50041/http_rpc/ul/ul.dump?arg=1";
+my $html = HTML::TagParser->new( $url);
+my $redis = Redis->new(server => '127.0.0.1:6379');
+$redis->select(1);
+my @elem = $html->getElementsByTagName( "pre" );
+$d = 0;
+my @array;
+foreach my $elm ( @elem ) {
+        my %text = %{$elm->subTree()};
+        $x =  $text[1][0][3];
+        $vals = Dumper(\%text);
+         @array = split(',', $vals, length($vals));
+}
+my @tdomains ;
+foreach my $value(@array) {
+        chomp $value;
+        $value =~ s/^\s+//;
+        $value =~ s/^'//;
+        $value =~ s/^\s+//;
+        $value =~ s/\s+$//;
+        $value =~ s/]$//;
+        $value =~ s/\s+$//;
+        $value =~ s/'$//;
+        my $fd ;
+        my $domain ;
+        my $user ;
+        if($value =~ /AoR:/) {
+                my @split = split(':', $value);
+                $fd = $split[1];
+                chomp $fd;
+                my @split2 = split('@', $fd);
+                $domain = $split2[1];
+                $user = $split2[0];
+                $user =~ s/^\s+//;
+                print "Domain: $domain / User:$user\n";
+                $tmp_domain_key = "TONLINE:" . $domain;
+                $domain_key = "ONLINE:" . $domain;
+                $redis->sadd($tmp_domain_key, $user);
+                $redis->sadd("TONLINEDOMAINS",$tmp_domain_key);
+        }
+
+}
+@tdomains = $redis->smembers("TONLINEDOMAINS");
+
+foreach (@tdomains) {
+        $tcurrent_domain =  $_;
+        #print $tcurrent_domain;
+        $current_domain=substr($tcurrent_domain,1);
+        #print $current_domain;
+        $redis->sunionstore("AUB",$tcurrent_domain,$current_domain);
+        $redis->sinterstore($current_domain,$tcurrent_domain,"AUB");
+        $redis->del("AUB");
+        $redis->del($tcurrent_domain);
+}
+$redis->sunionstore("AUB","TONLINEDOMAINS","ONLINEDOMAINS");
+$redis->sinterstore("ONLINEDOMAINS","TONLINEDOMAINS","AUB");
+$redis->del("AUB");
+$redis->del("TONLINEDOMAINS");
+
+#PUBLISH ONLINE DOMAINS AND USERS
+my @domains = $redis->smembers("ONLINEDOMAINS");
+foreach my $t (@domains){
+        $tcurrent_domain =  $t;
+        $current_domain=substr($tcurrent_domain,1);
+        $redis->publish("ONLINEDOMAINS",$current_domain);
+        my @onlineusers = $redis->smembers($current_domain);
+        foreach (@onlineusers){
+                $redis->publish($current_domain,$_);
+        }
+}
